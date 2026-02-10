@@ -22,7 +22,7 @@ class DiffusionTrainer:
             checkpoint_dir: Checkpoint save directory
         """
         self.model = model.to(device)
-        self.diffusion = diffusion
+        self.diffusion = diffusion.to(device)
         self.device = device
         self.checkpoint_dir = checkpoint_dir
         

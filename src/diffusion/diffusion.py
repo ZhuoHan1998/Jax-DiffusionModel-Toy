@@ -94,6 +94,8 @@ class GaussianDiffusion:
             noise = torch.randn_like(x_0)
         
         batch_size = x_0.shape[0]
+        # Ensure t is on the same device as the diffusion tensors
+        t = t.to(self.sqrt_alphas_cumprod.device)
         sqrt_alpha_bar = self.sqrt_alphas_cumprod[t]
         sqrt_one_minus_alpha_bar = self.sqrt_one_minus_alphas_cumprod[t]
         
@@ -119,6 +121,8 @@ class GaussianDiffusion:
             log_variance: Log of posterior variance
         """
         batch_size = x_0.shape[0]
+        # Ensure t is on the same device as the diffusion tensors
+        t = t.to(self.posterior_mean_coef1.device)
         
         coef1 = self.posterior_mean_coef1[t].view(batch_size, *([1] * (len(x_0.shape) - 1)))
         coef2 = self.posterior_mean_coef2[t].view(batch_size, *([1] * (len(x_0.shape) - 1)))

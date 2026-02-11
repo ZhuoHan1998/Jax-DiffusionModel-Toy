@@ -27,10 +27,12 @@ The implementation supports various toy datasets and conditional generation:
 - **Guidance Scale Comparison**: Visualize the effect of different guidance strengths
 
 <p align="center">
-  <img src="pics/swiss_roll_ddim.png" width="45%" />
-  <img src="pics/conditional_generation_comparison.png" width="45%" />
+  <img src="pics/swiss_roll_ddim.png" width="100%" />
 </p>
 
+<p align="center">
+<img src="pics/conditional_generation_comparison.png" width="100%" />
+</p>
 ## 📁 Project Structure
 
 ```

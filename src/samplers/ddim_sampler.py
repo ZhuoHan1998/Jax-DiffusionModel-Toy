@@ -53,7 +53,7 @@ class DDIMSampler(BaseSampler):
             
             with torch.no_grad():
                 # Predict noise
-                if class_labels is not None and guidance_scale > 1.0:
+                if class_labels is not None and guidance_scale != 1.0:
                     # Classifier-Free Guidance
                     noise_pred = self.model(x_t, t_batch, class_labels)
                     noise_pred_uncond = self.model(x_t, t_batch, None)

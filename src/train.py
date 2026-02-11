@@ -15,18 +15,20 @@ class DiffusionTrainer:
     Diffusion Model Training class
     """
     
-    def __init__(self, model, diffusion, device='cpu', checkpoint_dir='checkpoints'):
+    def __init__(self, model, diffusion, device='cpu', checkpoint_dir='checkpoints', condition_dropout_rate=0.1):
         """
         Args:
             model: Denoising network
             diffusion: GaussianDiffusion instance
             device: Computation device
             checkpoint_dir: Checkpoint save directory
+            condition_dropout_rate: Probability of dropping condition during training (for CFG)
         """
         self.model = model.to(device)
         self.diffusion = diffusion.to(device)
         self.device = device
         self.checkpoint_dir = checkpoint_dir
+        self.condition_dropout_rate = condition_dropout_rate
         
         os.makedirs(checkpoint_dir, exist_ok=True)
         
@@ -80,6 +82,26 @@ class DiffusionTrainer:
         Returns:
             Loss value
         """
+        # Apply condition dropout for Classifier-Free Guidance
+        if class_labels is not None and self.condition_dropout_rate > 0:
+            # Randomly drop condition with specified probability
+            drop_mask = torch.rand(class_labels.shape[0], device=self.device) < self.condition_dropout_rate
+            # Create a copy to avoid modifying the original
+            class_labels_train = class_labels.clone()
+            # For dropped samples, we need to pass None to the model
+            # But we can't have mixed None/tensor, so we'll handle this differently
+            # We'll create a mask and pass it separately, or use a special token
+            # For now, let's use a simpler approach: create separate batches
+            
+            # Actually, the correct approach is to pass None for the entire batch when dropped
+            # But we want per-sample dropout. So we need to modify the model call.
+            # For simplicity, let's just set a flag or use -1 and handle it in the model
+            # Better: just don't apply dropout per-sample, apply it per-batch
+            if torch.rand(1).item() < self.condition_dropout_rate:
+                class_labels = None
+            else:
+                class_labels = class_labels_train
+        
         # Generate random noise
         noise = torch.randn_like(x_0)
         

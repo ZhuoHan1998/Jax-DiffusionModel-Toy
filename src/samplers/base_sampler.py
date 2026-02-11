@@ -49,4 +49,4 @@ class BaseSampler(abc.ABC):
         Returns:
             Adjusted noise prediction
         """
-        return (1.0 - guidance_scale) * noise_pred_uncond + guidance_scale * noise_pred
+        return noise_pred_uncond + guidance_scale * (noise_pred - noise_pred_uncond)

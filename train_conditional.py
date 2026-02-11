@@ -90,7 +90,7 @@ def train_conditional_model(device='cpu'):
     
     # Training
     print("\n4. Starting training...")
-    trainer = DiffusionTrainer(model, diffusion, device=device)
+    trainer = DiffusionTrainer(model, diffusion, device=device, condition_dropout_rate=0.1)
     trainer.setup_optimizer(learning_rate=1e-3)
     trainer.setup_scheduler(mode='cosine', num_epochs=num_epochs)
     trainer.train(train_loader, num_epochs=num_epochs, save_every=10)
@@ -107,7 +107,7 @@ def train_conditional_model(device='cpu'):
 
 
 def generate_conditional_samples(model, diffusion, num_classes, device='cpu'):
-    """Generate samples using conditional generation"""
+    """Generate samples using conditional generation with multiple guidance scales"""
     
     print("\n" + "=" * 50)
     print("Conditional Generation Sampling")
@@ -117,87 +117,77 @@ def generate_conditional_samples(model, diffusion, num_classes, device='cpu'):
     sampler = DDIMSampler(diffusion, model, device=device, num_steps=50, eta=0.0)
     inference = DiffusionInference(sampler, device=device)
     
-    # Generate samples for each class
+    # Different guidance scales to compare
+    guidance_scales = [0.0, 1.0, 2.0, 3.0]
+    
+    # Generate samples for each class and guidance scale
     batch_size = 100
     samples_by_class = {}
     
     for class_id in range(num_classes):
-        print(f"\nGenerating samples for class {class_id} (no guidance)...")
-        
-        # Create class labels
         class_labels = torch.full((batch_size,), class_id, dtype=torch.long, device=device)
         
-        # Generate samples
-        samples = inference.generate(
-            batch_size=batch_size,
-            data_dim=2,
-            class_labels=class_labels,
-            guidance_scale=1.0  # No guidance
-        )
-        samples_by_class[f'class_{class_id}_no_guidance'] = samples
-        
-        # Regenerate with guidance
-        print(f"Generating samples for class {class_id} (with guidance)...")
-        samples_guided = inference.generate(
-            batch_size=batch_size,
-            data_dim=2,
-            class_labels=class_labels,
-            guidance_scale=7.5  # Strong guidance
-        )
-        samples_by_class[f'class_{class_id}_with_guidance'] = samples_guided
+        for guidance_scale in guidance_scales:
+            print(f"Generating samples for class {class_id} (guidance={guidance_scale})...")
+            
+            samples = inference.generate(
+                batch_size=batch_size,
+                data_dim=2,
+                class_labels=class_labels,
+                guidance_scale=guidance_scale
+            )
+            samples_by_class[f'class_{class_id}_guidance_{guidance_scale}'] = samples
     
     return samples_by_class, inference
 
 
 def visualize_conditional_generation(samples_by_class, inference, dataset):
-    """Visualize conditional generation results"""
+    """Visualize conditional generation results with different guidance scales"""
     
     import matplotlib
-    matplotlib.use('Agg')  # Use non-interactive backend for headless environments
+    matplotlib.use('Agg')
     import matplotlib.pyplot as plt
     
     print("\n" + "=" * 50)
     print("Visualization Results")
     print("=" * 50)
     
-    fig, axes = plt.subplots(2, 3, figsize=(15, 10))
-    fig.suptitle('Conditional Diffusion Generation - Gaussian Mixture', fontsize=16)
-    
+    guidance_scales = [0.0, 1.0, 2.0, 3.0]
     num_classes = 3
     
-    for class_id in range(num_classes):
-        # No guidance
-        ax_no = axes[0, class_id]
-        samples_no = samples_by_class[f'class_{class_id}_no_guidance']
-        ax_no.scatter(samples_no[:, 0], samples_no[:, 1], alpha=0.5, s=20, label=f'Generated (No Guidance)')
-        
-        # Add real data
-        mask = dataset.labels == class_id
-        ax_no.scatter(dataset.data[mask, 0], dataset.data[mask, 1], alpha=0.5, s=20, 
-                     label='Real Data', marker='x')
-        ax_no.set_title(f'Class {class_id} (No Guidance)')
-        ax_no.legend()
-        ax_no.grid(True, alpha=0.3)
-        ax_no.set_xlim(-3, 3)
-        ax_no.set_ylim(-3, 3)
-        
-        # With guidance
-        ax_with = axes[1, class_id]
-        samples_with = samples_by_class[f'class_{class_id}_with_guidance']
-        ax_with.scatter(samples_with[:, 0], samples_with[:, 1], alpha=0.5, s=20, label=f'Generated (With Guidance)')
-        
-        # Add real data
-        ax_with.scatter(dataset.data[mask, 0], dataset.data[mask, 1], alpha=0.5, s=20,
-                       label='Real Data', marker='x')
-        ax_with.set_title(f'Class {class_id} (With Guidance, scale=7.5)')
-        ax_with.legend()
-        ax_with.grid(True, alpha=0.3)
-        ax_with.set_xlim(-3, 3)
-        ax_with.set_ylim(-3, 3)
+    fig, axes = plt.subplots(len(guidance_scales), num_classes, figsize=(15, 16))
+    fig.suptitle('Conditional Diffusion Generation - Guidance Scale Comparison', fontsize=18)
+    
+    for row, guidance_scale in enumerate(guidance_scales):
+        for col, class_id in enumerate(range(num_classes)):
+            ax = axes[row, col]
+            
+            # Get samples for this guidance scale and class
+            samples = samples_by_class[f'class_{class_id}_guidance_{guidance_scale}']
+            
+            # Plot generated samples (blue)
+            ax.scatter(samples[:, 0], samples[:, 1], alpha=0.6, s=20, 
+                      color='blue', label='Generated')
+            
+            # Add real data (orange)
+            mask = dataset.labels == class_id
+            ax.scatter(dataset.data[mask, 0], dataset.data[mask, 1], alpha=0.6, s=20,
+                      color='orange', marker='x', label='Real Data')
+            
+            # Labels and formatting
+            if row == 0:
+                ax.set_title(f'Class {class_id}', fontsize=12, fontweight='bold')
+            if col == 0:
+                ax.set_ylabel(f'Guidance={guidance_scale}', fontsize=12, fontweight='bold')
+            
+            ax.legend(fontsize=9)
+            ax.grid(True, alpha=0.3)
+            ax.set_xlim(-3, 3)
+            ax.set_ylim(-3, 3)
     
     plt.tight_layout()
-    plt.savefig('pics/conditional_generation.png', dpi=150)
-    print("Visualization results saved: pics/conditional_generation.png")
+    plt.savefig('pics/conditional_generation_comparison.png', dpi=150, bbox_inches='tight')
+    print("Visualization results saved: pics/conditional_generation_comparison.png")
     plt.close()
 
 

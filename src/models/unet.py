@@ -22,18 +22,16 @@ class ResidualBlock(nn.Module):
             )
         
         self.block1 = nn.Sequential(
-            nn.GroupNorm(32, in_channels),
-            nn.SiLU(),
-            nn.Linear(in_channels, out_channels) if in_channels == out_channels else nn.Conv1d(in_channels, out_channels, 3, padding=1)
+            nn.Linear(in_channels, out_channels),
+            nn.SiLU()
         )
         
         self.block2 = nn.Sequential(
-            nn.GroupNorm(32, out_channels),
-            nn.SiLU(),
-            nn.Conv1d(out_channels, out_channels, 3, padding=1)
+            nn.Linear(out_channels, out_channels),
+            nn.SiLU()
         )
         
-        self.res_conv = nn.Identity() if in_channels == out_channels else nn.Conv1d(in_channels, out_channels, 1)
+        self.res_conv = nn.Identity() if in_channels == out_channels else nn.Linear(in_channels, out_channels)
     
     def forward(self, x, time_emb, cond_emb=None):
         h = self.block1(x)
@@ -42,22 +40,12 @@ class ResidualBlock(nn.Module):
         time_scale = self.mlp(time_emb)
         scale, shift = time_scale.chunk(2, dim=1)
         
-        if len(x.shape) == 2:  # (batch, features)
-            scale = scale.unsqueeze(2)
-            shift = shift.unsqueeze(2)
-        else:  # (batch, channels, length)
-            scale = scale.unsqueeze(2)
-            shift = shift.unsqueeze(2)
-        
         h = h * (1 + scale) + shift
         
         # Apply condition embedding
         if cond_emb is not None and self.cond_mlp is not None:
             cond_scale = self.cond_mlp(cond_emb)
             cond_scale, cond_shift = cond_scale.chunk(2, dim=1)
-            if len(h.shape) == 3:
-                cond_scale = cond_scale.unsqueeze(2)
-                cond_shift = cond_shift.unsqueeze(2)
             h = h * (1 + cond_scale) + cond_shift
         
         h = self.block2(h)
@@ -166,7 +154,7 @@ class SimpleUNet(nn.Module):
         # Decoding
         for i, block in enumerate(self.decoder_blocks):
             skip = skip_connections[-(i + 2)]
-            h = torch.cat([h, skip], dim=-1)
+            h = torch.cat([h, skip], dim=1)  # Concatenate on feature dimension
             h = block(h, t_emb, cond_emb)
         
         # Output projection

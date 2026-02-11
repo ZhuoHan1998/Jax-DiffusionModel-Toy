@@ -3,6 +3,8 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
+import matplotlib
+matplotlib.use('Agg')  # Use non-interactive backend for headless environments
 import matplotlib.pyplot as plt
 from datetime import datetime
 import json
@@ -206,5 +208,10 @@ class DiffusionTrainer:
         if save_path:
             plt.savefig(save_path)
             print(f"Loss curve saved: {save_path}")
+            plt.close()
         else:
-            plt.show()
+            # In headless mode, still save to a default path
+            default_path = 'pics/loss_curve.png'
+            plt.savefig(default_path)
+            print(f"Loss curve saved: {default_path}")
+            plt.close()

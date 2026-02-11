@@ -1,4 +1,6 @@
 import torch
+import matplotlib
+matplotlib.use('Agg')  # Use non-interactive backend
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -44,7 +46,7 @@ class DiffusionInference:
             samples: Generated samples (n_samples, 2)
             real_data: Real data (n_samples, 2), optional
             title: Chart title
-            save_path: Save path, None means not to save
+            save_path: Save path, None means use default path
         """
         fig, axes = plt.subplots(1, 2, figsize=(12, 5))
         
@@ -65,11 +67,12 @@ class DiffusionInference:
         
         plt.tight_layout()
         
-        if save_path:
-            plt.savefig(save_path, dpi=150)
-            print(f"Chart saved: {save_path}")
-        else:
-            plt.show()
+        if save_path is None:
+            save_path = f'pics/{title.lower().replace(" ", "_")}.png'
+        
+        plt.savefig(save_path, dpi=150)
+        print(f"Chart saved: {save_path}")
+        plt.close()
     
     def plot_samples_3d(self, samples, real_data=None, title='Generated Samples', save_path=None):
         """
@@ -79,7 +82,7 @@ class DiffusionInference:
             samples: Generated samples (n_samples, 3)
             real_data: Real data (n_samples, 3), optional
             title: Chart title
-            save_path: Save path
+            save_path: Save path, None means use default path
         """
         from mpl_toolkits.mplot3d import Axes3D
         
@@ -104,11 +107,12 @@ class DiffusionInference:
         
         plt.tight_layout()
         
-        if save_path:
-            plt.savefig(save_path, dpi=150)
-            print(f"Chart saved: {save_path}")
-        else:
-            plt.show()
+        if save_path is None:
+            save_path = f'pics/{title.lower().replace(" ", "_")}.png'
+        
+        plt.savefig(save_path, dpi=150)
+        print(f"Chart saved: {save_path}")
+        plt.close()
     
     def evaluate_fid_like(self, generated_samples, real_samples):
         """

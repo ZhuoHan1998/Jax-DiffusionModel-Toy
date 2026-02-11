@@ -11,6 +11,8 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')  # Use non-interactive backend for headless environments
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
@@ -59,9 +61,9 @@ def visualize_forward_diffusion():
     
     plt.suptitle('Forward Diffusion Process - Swiss Roll', fontsize=14)
     plt.tight_layout()
-    plt.savefig('forward_diffusion.png', dpi=100)
-    print("✓ Forward diffusion image saved: forward_diffusion.png")
-    plt.show()
+    plt.savefig('pics/forward_diffusion.png', dpi=100)
+    print("✓ Forward diffusion image saved: pics/forward_diffusion.png")
+    plt.close()
 
 
 def train_model_example():
@@ -176,9 +178,9 @@ def sample_and_visualize(model, diffusion):
     ax3.set_zlabel('Z')
     
     plt.tight_layout()
-    plt.savefig('sampling_comparison.png', dpi=100)
-    print("✓ Sampling comparison image saved: sampling_comparison.png")
-    plt.show()
+    plt.savefig('pics/sampling_comparison.png', dpi=100)
+    print("✓ Sampling comparison image saved: pics/sampling_comparison.png")
+    plt.close()
     
     # Evaluation
     print("\nEvaluating generation quality...")

@@ -3,6 +3,8 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 import sys
 import os
+import matplotlib
+matplotlib.use('Agg')  # Use non-interactive backend for headless environments
 
 # Add source code path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
@@ -72,7 +74,7 @@ def main():
     )
     
     # 6. Save loss curve
-    trainer.plot_loss(save_path='loss_curve.png')
+    trainer.plot_loss(save_path='pics/loss_curve.png')
     
     # 7. Generate samples
     print("\n6. Generating samples...")
@@ -99,14 +101,14 @@ def main():
         samples_ddpm,
         real_data=real_data,
         title='Swiss Roll',
-        save_path='swiss_roll_ddpm.png'
+        save_path='pics/swiss_roll_ddpm.png'
     )
     
     ddim_inference.plot_samples_3d(
         samples_ddim,
         real_data=real_data,
         title='Swiss Roll (DDIM)',
-        save_path='swiss_roll_ddim.png'
+        save_path='pics/swiss_roll_ddim.png'
     )
     
     # 9. Evaluate

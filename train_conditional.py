@@ -8,6 +8,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader, Dataset
 import sys
 import os
+import math
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
@@ -33,8 +34,8 @@ class ConditionalGaussianDataset(Dataset):
         for class_id in range(num_classes):
             # Each class has a different mean
             mean = torch.tensor([
-                torch.cos(2 * 3.14159 * class_id / num_classes),
-                torch.sin(2 * 3.14159 * class_id / num_classes)
+                math.cos(2 * math.pi * class_id / num_classes),
+                math.sin(2 * math.pi * class_id / num_classes)
             ]) * 2.0
             
             # Generate data for this class
@@ -151,6 +152,8 @@ def generate_conditional_samples(model, diffusion, num_classes, device='cpu'):
 def visualize_conditional_generation(samples_by_class, inference, dataset):
     """Visualize conditional generation results"""
     
+    import matplotlib
+    matplotlib.use('Agg')  # Use non-interactive backend for headless environments
     import matplotlib.pyplot as plt
     
     print("\n" + "=" * 50)
@@ -193,9 +196,9 @@ def visualize_conditional_generation(samples_by_class, inference, dataset):
         ax_with.set_ylim(-3, 3)
     
     plt.tight_layout()
-    plt.savefig('conditional_generation.png', dpi=150)
-    print("Visualization results saved: conditional_generation.png")
-    plt.show()
+    plt.savefig('pics/conditional_generation.png', dpi=150)
+    print("Visualization results saved: pics/conditional_generation.png")
+    plt.close()
 
 
 def main():

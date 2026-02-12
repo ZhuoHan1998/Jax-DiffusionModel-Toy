@@ -36,8 +36,8 @@ class SwissRoll(Dataset):
             z += np.random.randn(n_samples) * noise
         
         data = np.column_stack([x, y, z]).astype(np.float32)
-        # Normalize to [-1, 1]
-        data = (data - data.mean(axis=0)) / data.std(axis=0) * 0.5
+        # Standardize to mean=0, std=1 (proper normalization for diffusion)
+        data = (data - data.mean(axis=0)) / data.std(axis=0)
         return data
     
     def __len__(self):

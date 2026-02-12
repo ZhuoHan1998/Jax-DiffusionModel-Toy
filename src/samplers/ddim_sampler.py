@@ -64,27 +64,31 @@ class DDIMSampler(BaseSampler):
                     noise_pred = self.model(x_t, t_batch, class_labels)
                 
                 # DDIM sampling formula
-                alpha_bar_t = self.diffusion.alphas_cumprod[t].item()
+                alpha_bar_t = self.diffusion.alphas_cumprod[t]
                 
                 # Get previous timestep
                 if step_idx < len(self.timestep_indices) - 1:
                     t_prev = self.timestep_indices[step_idx + 1]
-                    alpha_bar_t_prev = self.diffusion.alphas_cumprod[t_prev].item()
+                    alpha_bar_t_prev = self.diffusion.alphas_cumprod[t_prev]
                 else:
-                    alpha_bar_t_prev = 1.0
+                    alpha_bar_t_prev = torch.tensor(1.0, device=self.device)
+                
+                # Convert to tensors on device (avoid torch.tensor() warning for scalars)
+                alpha_bar_t = alpha_bar_t.to(self.device)
+                alpha_bar_t_prev = alpha_bar_t_prev.to(self.device)
                 
                 # Get x_0 from noise prediction
-                x_0_pred = (x_t - torch.sqrt(torch.tensor(1 - alpha_bar_t, device=self.device)) * noise_pred) / torch.sqrt(torch.tensor(alpha_bar_t, device=self.device))
+                x_0_pred = (x_t - torch.sqrt(1 - alpha_bar_t) * noise_pred) / torch.sqrt(alpha_bar_t)
                 
                 # Calculate sigma (control stochasticity)
                 sigma = self.eta * torch.sqrt(
-                    torch.tensor((1 - alpha_bar_t_prev) / (1 - alpha_bar_t), device=self.device) *
-                    torch.tensor((1 - alpha_bar_t / alpha_bar_t_prev), device=self.device)
+                    ((1 - alpha_bar_t_prev) / (1 - alpha_bar_t)) *
+                    ((1 - alpha_bar_t / alpha_bar_t_prev))
                 )
                 
                 # DDIM sampling
-                c1 = torch.sqrt(torch.tensor(alpha_bar_t_prev, device=self.device))
-                c2 = torch.sqrt(torch.tensor(1 - alpha_bar_t_prev - sigma ** 2, device=self.device))
+                c1 = torch.sqrt(alpha_bar_t_prev)
+                c2 = torch.sqrt(1 - alpha_bar_t_prev - sigma ** 2)
                 
                 x_t = c1 * x_0_pred + c2 * noise_pred
                 

@@ -3,6 +3,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 import sys
 import os
+import time
 import matplotlib
 matplotlib.use('Agg')  # Use non-interactive backend for headless environments
 
@@ -76,22 +77,39 @@ def main():
     # 6. Save loss curve
     trainer.plot_loss(save_path='pics/loss_curve.png')
     
-    # 7. Generate samples
-    print("\n6. Generating samples...")
+    # 7. Generate samples with timing comparison
+    print("\n6. Generating samples with timing comparison...")
     
     # Use DDPM sampler
     ddpm_sampler = DDPMSampler(diffusion, model, device=device)
     ddpm_inference = DiffusionInference(ddpm_sampler, device=device)
     
+    # Time DDPM sampling
+    start_time = time.time()
     samples_ddpm = ddpm_inference.generate(batch_size=1000, data_dim=data_dim)
+    ddpm_time = time.time() - start_time
     print(f"DDPM generated samples shape: {samples_ddpm.shape}")
+    print(f"DDPM sampling time: {ddpm_time:.4f} seconds (1000 steps)")
     
     # Use DDIM sampler (faster)
     ddim_sampler = DDIMSampler(diffusion, model, device=device, num_steps=50, eta=0.0)
     ddim_inference = DiffusionInference(ddim_sampler, device=device)
     
+    # Time DDIM sampling
+    start_time = time.time()
     samples_ddim = ddim_inference.generate(batch_size=1000, data_dim=data_dim)
+    ddim_time = time.time() - start_time
     print(f"DDIM generated samples shape: {samples_ddim.shape}")
+    print(f"DDIM sampling time: {ddim_time:.4f} seconds (50 steps)")
+    
+    # Summary comparison
+    print("\n" + "="*50)
+    print("SAMPLING TIME COMPARISON")
+    print("="*50)
+    print(f"DDPM: {ddpm_time:.4f}s (1000 steps)")
+    print(f"DDIM: {ddim_time:.4f}s (50 steps)")
+    print(f"Speedup: {ddpm_time/ddim_time:.2f}x faster")
+    print("="*50)
     
     # 8. Visualize results
     print("\n7. Visualizing results...")
